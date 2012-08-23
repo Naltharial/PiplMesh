@@ -41,6 +41,8 @@ urlpatterns = patterns('',
     url(r'^register/$', account_views.RegistrationView.as_view(), name='registration'),
     url(r'^login/$', 'django.contrib.auth.views.login', {'template_name': 'user/login.html'}, name='login'),
     url(r'^logout/$', account_views.logout, name='logout'),
+    
+    url(r'^ajax/login/$', 'django.contrib.auth.views.login', {'template_name': 'ajax/login.html'}, name='ajax/login'),
 
     # Facebook
     url(r'^facebook/login/$', account_views.FacebookLoginView.as_view(), name='facebook_login'),
