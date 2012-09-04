@@ -9,10 +9,11 @@ class PopupNode(template.base.Node):
         self.popup = popup
 
     def render(self, context):
-        view_object = self.popup()
-        view_object.request = context['request']
-        popup_template = view_object.render_to_response(context).render()
-        return popup_template.content
+        view_function = self.popup.as_view(context=context)
+        template_response = view_function(context['request'])
+        template_response.render()
+        
+        return template_response.content
 
 @register.tag('popup')
 def do_popup(parser, token):

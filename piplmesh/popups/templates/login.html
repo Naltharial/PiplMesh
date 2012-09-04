@@ -5,7 +5,7 @@
         <img src="{% static "piplmesh/images/close.png" %}">
     </div>
     <div class="login_form">
-        {% with form=django.contrib.auth.forms.AuthenticationForm %}
+        {% with next|default:request_get_next|default:LOGIN_REDIRECT_URL as next %}
             {% trans "Login" as form_submit %}
             {% url "login" as form_action %}
             {% include "form/form.html" %}
@@ -37,6 +37,9 @@
                     {% csrf_token %}
                     <p><button type="submit" class="google_login_button"><span class="google_button_text">{% trans "Login with Google" %}</span></button></p>
                 </form>
+            </li>
+            <li>
+                {% include "user/browserid.html" %}
             </li>
         </ul>
     </div>

@@ -623,7 +623,6 @@ button.browserid-signin:hover {
 }
 
 #overlay .close {
-	margin: -20px 0 0 0;
 	cursor: pointer;
     float: right;
 }
@@ -642,6 +641,15 @@ button.browserid-signin:hover {
 #overlay .login .login_form {
     float: left;
     width: 250px;
+    padding: 0 4px;
+}
+
+#overlay .login .login_form .buttons {
+    margin: 0;
+}
+
+#overlay .login .login_form .form_fields {
+	padding: 15px;
 }
 
 #overlay .login .login_form .form_fields .field {
@@ -657,10 +665,13 @@ button.browserid-signin:hover {
     width: 0;
 }
 
+#overlay .login .login_form .form_fields .errorlist {
+	margin: 0;
+}
+
 #overlay .login .login_form .buttons {
     padding-top: 0;
     text-align: right;
-    width: 100%;
 }
 
 #overlay .login .other_login_options {
