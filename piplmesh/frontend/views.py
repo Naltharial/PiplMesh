@@ -135,7 +135,7 @@ def panels_order(request):
 
         for name, column in zip(request.POST.getlist('names'), request.POST.getlist('columns')):
             column = int(column)
-            if column == len(panels):
+            while column >= len(panels):
                 panels.append([])
             panels[column].append(name)
 
