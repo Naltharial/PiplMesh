@@ -1,0 +1,39 @@
+{% load i18n %}
+
+<form action="{{ form_action }}" method="post" id="panel_form">
+    {{ form.non_field_errors }}
+    {% csrf_token %}
+    {% with next|default:request_get_next|default:"" as next_url %}
+        <div style="display: none;"><input type="hidden" name="{{ REDIRECT_FIELD_NAME }}" value="{{ next_url }}" /></div>
+    {% endwith %}
+    {% if form.fields %}
+        <ul class="form_fields">
+            {% for field in form %}
+                {% if field.errors %}
+                    <li class="field_error">
+                        {{ field.errors }}
+                    </li>
+                {% endif %}
+                <li class="field">
+                	<div class="text">
+                     <label for="{{ field.id_for_label }}">
+                         {{ field.label }}
+                     </label>
+                     {% if field.field.dependencies %}
+                      <div class="dependencies">
+                      	{% trans "Required panels" %}:
+                      	<ul>
+                          {% for dep in field.field.dependencies %}
+                          	<li>{{ dep }}</li>
+                          {% endfor %}
+                          </ul>
+                      </div>
+                  {% endif %}
+                 </div>
+                 <div class="input">{{ field }}</div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <div class="buttons"><input type="submit" value="{{ form_submit }}" /></div>
+</form>

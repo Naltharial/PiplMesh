@@ -402,6 +402,34 @@ class EmailConfirmationProcessToken(generic_views.FormView):
     def get_form(self, form_class):
         return form_class(self.request.user, **self.get_form_kwargs())
 
+class PanelView(generic_views.FormView):
+    template_name = 'user/panels.html'
+    form_class = forms.panel_form_factory()
+    success_url = urlresolvers.reverse_lazy('user_panels')
+
+    def form_valid(self, form):
+        user = self.request.user
+        user.user_panels.panels_disabled = [key for key, val in form.cleaned_data.iteritems() if not val]
+        user.save()
+        messages.success(self.request, _("You have successfully set your panel defaults."))
+        return super(PanelView, self).form_valid(form)
+    
+    def get_initial(self):
+        user = self.request.user
+        return dict(zip(user.user_panels.panels_disabled, [False] * len(user.user_panels.panels_disabled)))
+    
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments for instanciating the form,
+        copying request.POST so we can change users' selection on validation.
+        """
+        kwargs = {'initial': self.get_initial()}
+        if self.request.method in ('POST', 'PUT'):
+            kwargs.update({
+                'data': dict(self.request.POST),
+            })
+        return kwargs
+
 def logout(request):
     """
     After user logouts, redirect her back to the page she came from.

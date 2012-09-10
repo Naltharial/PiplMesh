@@ -16,8 +16,8 @@ class BasePanel(object):
         from . import panels_pool
 
         for dependency in self.get_dependencies():
-            if not panels_pool.panels_pool.has_panel(dependency):
-                raise exceptions.PanelDependencyNotRegistered("Panel '%s' depends on panel '%s', but later is not registered" % (self.get_name(), dependency))
+            if not panels_pool.has_panel(dependency):
+                raise exceptions.PanelDependencyNotRegistered("Panel '%s' depends on panel '%s', but the latter is not registered" % (self.get_name(), dependency))
 
     @classmethod
     def get_name(cls):

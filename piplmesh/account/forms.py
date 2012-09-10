@@ -2,6 +2,7 @@ from django import forms
 from django.forms.extras import widgets
 from django.utils.translation import ugettext_lazy as _
 
+from piplmesh import panels
 from piplmesh.account import fields, form_fields, models
 
 class UserUsernameForm(forms.Form):
@@ -164,3 +165,59 @@ class EmailConfirmationProcessTokenForm(forms.Form):
         if not self.user.email_confirmation_token.check_token(confirmation_token):
             raise forms.ValidationError(_("The confirmation token is invalid or has expired. Please retry."), code='confirmation_token_incorrect')
         return confirmation_token
+
+def panel_form_factory():
+    """
+    Function which generates the form for selecting homepage panels.
+    """
+    def __init__(self, *args, **kwargs):
+        super(forms.Form, self).__init__(*args, **kwargs)
+        
+        # Add information about dependencies to display in template
+        for name in self.fields:
+            panel = panels.panels_pool.get_panel(name)
+            self.fields[name].dependencies = panel.get_dependencies()
+    
+    def clean(self):
+        cleaned_data = super(forms.Form, self).clean()
+        add = []
+        
+        while True:
+            if add:
+                # User has not selected some of the dependencies, so we select them
+                for val in add:
+                    cleaned_data[val] = True
+                    self.data[val] = 'on'
+                add = []
+            
+            for name, val in cleaned_data.iteritems():
+                if not val:
+                    continue
+                
+                panel = panels.panels_pool.get_panel(name)
+                errors = []
+                for dep in panel.get_dependencies():
+                    if not cleaned_data[dep]:
+                        errors.append(_("Panel '%s' depends on panel '%s', it has been selected." % (name, dep)))
+                        add.append(dep)
+                
+                if errors:
+                    self._errors[name] = self.error_class(errors)
+                   
+            # All requirements satisfied
+            if not add:
+                break
+        
+        return cleaned_data
+
+    panel_list = panels.panels_pool.get_all_panels()
+    
+    properties = {}
+    for panel in panel_list:
+        properties[panel.get_name()] = forms.BooleanField(required=False, initial=True)
+    
+    form = type('PanelForm', (forms.Form,), properties)
+    form.__init__ = __init__
+    form.clean = clean
+
+    return form

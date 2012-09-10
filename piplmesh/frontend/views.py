@@ -120,11 +120,11 @@ def send_update_on_new_post(sender, post, request, bundle, **kwargs):
 
 def panels_collapse(request):
     if request.method == 'POST':
-        request.user.panels_collapsed[request.POST['name']] = True if request.POST['collapsed'] == 'true' else False
+        request.user.user_panels.panels_collapsed[request.POST['name']] = True if request.POST['collapsed'] == 'true' else False
         request.user.save()
         return http.HttpResponse()
     else:
-        return http.HttpResponse(simplejson.dumps(request.user.panels_collapsed), mimetype='application/json')
+        return http.HttpResponse(simplejson.dumps(request.user.user_panels.panels_collapsed), mimetype='application/json')
 
 def panels_order(request):
     if request.method == 'POST':
@@ -136,11 +136,11 @@ def panels_order(request):
                 panels.append([])
             panels[column].append(name)
 
-        request.user.panels_order[request.POST['number_of_columns']] = panels
+        request.user.user_panels.panels_order[request.POST['number_of_columns']] = panels
         request.user.save()
 
         return http.HttpResponse()
     else:
         number_of_columns = request.GET['number_of_columns']
-        panels = request.user.panels_order.get(number_of_columns, [])
+        panels = request.user.user_panels.panels_order.get(number_of_columns, [])
         return http.HttpResponse(simplejson.dumps(panels), mimetype='application/json')

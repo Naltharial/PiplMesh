@@ -30,7 +30,7 @@
     </div>
     <div id="panels">
         <div class="panels_column">
-            {% for panel in user.get_panels %}
+            {% for panel in user.user_panels.get_panels %}
                 {% render_panel panel %}
             {% endfor %}
         </div>

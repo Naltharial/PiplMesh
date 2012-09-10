@@ -1,0 +1,18 @@
+{% extends "plain.html" %}
+
+{% load future i18n %}
+
+{% block title %}{% trans "Account" %}{% endblock %}
+
+{% block content %}
+    <div id="menu_list">
+        <p><a href="{% url "profile" username=user.username %}">{% trans "Profile" %}</a></p>
+        <p><a href="{% url "account" %}">{% trans "Account" %}</a></p>
+        <p id="current_item"><a href="{% url "user_panels" %}">{% trans "Panels" %}</a></p>
+    </div>
+    <div class="panels">
+        {% with form_submit=_("Submit") %}
+            {% include "form/panels.html" %}
+        {% endwith %}
+    </div>
+{% endblock %}

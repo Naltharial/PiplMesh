@@ -48,6 +48,16 @@ class TwitterAccessToken(mongoengine.EmbeddedDocument):
     key = mongoengine.StringField(max_length=150)
     secret = mongoengine.StringField(max_length=150)
 
+class UserPanels(mongoengine.EmbeddedDocument):
+    panels_collapsed = mongoengine.DictField()
+    panels_order = mongoengine.DictField()
+    panels_disabled = mongoengine.ListField()
+    
+    def get_panels(self):
+        return [panel for panel \
+                in panels.panels_pool.get_all_panels() \
+                if panel not in map(panels.panels_pool.get_panel, self.panels_disabled)]
+
 class User(auth.User):
     username = mongoengine.StringField(
         max_length=30,
@@ -83,10 +93,15 @@ class User(auth.User):
 
     email_confirmed = mongoengine.BooleanField(default=False)
     email_confirmation_token = mongoengine.EmbeddedDocumentField(EmailConfirmationToken)
-
-    # TODO: Model for panel settings should be more semantic.
-    panels_collapsed = mongoengine.DictField()
-    panels_order = mongoengine.DictField()
+    
+    user_panels = mongoengine.EmbeddedDocumentField(UserPanels)
+    
+    def __init__(self, *args, **kwargs):
+        super(User, self).__init__(*args, **kwargs)
+        
+        # If the user has not previously saved any panel data, make sure we have an object to query
+        if self.user_panels == None:
+            self.user_panels = UserPanels()
 
     @models.permalink
     def get_absolute_url(self):
@@ -94,10 +109,6 @@ class User(auth.User):
 
     def get_profile_url(self):
         return self.get_absolute_url()
-
-    def get_panels(self):
-        # TODO: Should return only panels user has enabled (should make sure users can enable panels only in the way that dependencies are satisfied)
-        return panels.panels_pool.get_all_panels()
 
     def is_anonymous(self):
         return not self.is_authenticated()
