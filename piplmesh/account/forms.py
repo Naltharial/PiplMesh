@@ -166,10 +166,21 @@ class EmailConfirmationProcessTokenForm(forms.Form):
             raise forms.ValidationError(_("The confirmation token is invalid or has expired. Please retry."), code='confirmation_token_incorrect')
         return confirmation_token
 
-def panel_form_factory():
+class PanelFormMetaclass(forms.Form.__metaclass__):
+    def __new__(cls, name, bases, attrs):
+        panel_list = panels.panels_pool.get_all_panels()
+        
+        for panel in panel_list:
+            attrs[panel.get_name()] = forms.BooleanField(required=False, initial=False)
+        
+        return super(PanelFormMetaclass, cls).__new__(cls, name, bases, attrs)
+
+class PanelForm(forms.Form):
     """
-    Function which generates the form for selecting homepage panels.
+    Form for selecting homepage panels.
     """
+    __metaclass__ = PanelFormMetaclass
+    
     def __init__(self, *args, **kwargs):
         super(forms.Form, self).__init__(*args, **kwargs)
         
@@ -209,15 +220,3 @@ def panel_form_factory():
                 break
         
         return cleaned_data
-
-    panel_list = panels.panels_pool.get_all_panels()
-    
-    properties = {}
-    for panel in panel_list:
-        properties[panel.get_name()] = forms.BooleanField(required=False, initial=True)
-    
-    form = type('PanelForm', (forms.Form,), properties)
-    form.__init__ = __init__
-    form.clean = clean
-
-    return form

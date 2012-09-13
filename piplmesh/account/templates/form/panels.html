@@ -15,22 +15,22 @@
                     </li>
                 {% endif %}
                 <li class="field">
-                	<div class="text">
-                     <label for="{{ field.id_for_label }}">
-                         {{ field.label }}
-                     </label>
-                     {% if field.field.dependencies %}
-                      <div class="dependencies">
-                      	{% trans "Required panels" %}:
-                      	<ul>
-                          {% for dep in field.field.dependencies %}
-                          	<li>{{ dep }}</li>
-                          {% endfor %}
-                          </ul>
-                      </div>
-                  {% endif %}
-                 </div>
-                 <div class="input">{{ field }}</div>
+                    <div class="text">
+                        <label for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                        {% if field.field.dependencies %}
+                            <div class="dependencies">
+                                {% trans "Required panels" %}:
+                                <ul>
+                                    {% for dep in field.field.dependencies %}
+                                        <li>{{ dep }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="input">{{ field }}</div>
                 </li>
             {% endfor %}
         </ul>

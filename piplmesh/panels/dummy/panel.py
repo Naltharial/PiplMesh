@@ -15,6 +15,18 @@ class DummyPanel(panels.BasePanel):
             'content': '\n\n'.join(lorem_ipsum.paragraphs(random.randint(1, 1))),
         })
         return context
+   
+class DummyTestPanel(DummyPanel):
+    dependencies = ('dummy',)
+    
+    def get_context(self, context):
+        context = super(DummyTestPanel, self).get_context(context)
+
+        context.update({
+            'header': _("Dummy test panel"),
+        })
+        return context
 
 if settings.DEBUG:
     panels.panels_pool.register(DummyPanel)
+    panels.panels_pool.register(DummyTestPanel)

@@ -1,4 +1,4 @@
-import smtplib
+import smtplib, pdb
 
 from django import dispatch, http, template
 from django.conf import settings
@@ -123,27 +123,30 @@ def send_update_on_new_post(sender, post, request, bundle, **kwargs):
 
 def panels_collapse(request):
     if request.method == 'POST':
-        request.user.user_panels.panels_collapsed[request.POST['name']] = True if request.POST['collapsed'] == 'true' else False
+        request.user.panels.layout[request.POST['name']].collapsed = True if request.POST['collapsed'] == 'true' else False
         request.user.save()
         return http.HttpResponse()
     else:
-        return http.HttpResponse(simplejson.dumps(request.user.user_panels.panels_collapsed), mimetype='application/json')
+        collapsed = dict(zip(request.user.panels.layout.keys(), [layout.collapsed for name, layout in request.user.panels.layout.iteritems()]))
+        return http.HttpResponse(simplejson.dumps(collapsed), mimetype='application/json')
 
 def panels_order(request):
     if request.method == 'POST':
-        panels = []
-
+        order = 0
+        oldc = None
+        columns, orders = dict(), dict()
         for name, column in zip(request.POST.getlist('names'), request.POST.getlist('columns')):
             column = int(column)
-            while column >= len(panels):
-                panels.append([])
-            panels[column].append(name)
-
-        request.user.user_panels.panels_order[request.POST['number_of_columns']] = panels
+            if oldc != column:
+                order = 0
+                oldc = column
+            order += 1
+            columns[name] = column
+            orders[name] = order
+        
+        request.user.panels.set_panels(request.POST.getlist('names'), column=columns, order=orders)
         request.user.save()
 
         return http.HttpResponse()
     else:
-        number_of_columns = request.GET['number_of_columns']
-        panels = request.user.user_panels.panels_order.get(number_of_columns, [])
-        return http.HttpResponse(simplejson.dumps(panels), mimetype='application/json')
+        return http.HttpResponse(simplejson.dumps(request.user.panels.get_columns()), mimetype='application/json')

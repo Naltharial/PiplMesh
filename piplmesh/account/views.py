@@ -1,4 +1,4 @@
-import json, urllib, urlparse
+import json, urllib, urlparse, pdb
 
 from django import dispatch, http, shortcuts
 from django.conf import settings
@@ -404,19 +404,17 @@ class EmailConfirmationProcessToken(generic_views.FormView):
 
 class PanelView(generic_views.FormView):
     template_name = 'user/panels.html'
-    form_class = forms.panel_form_factory()
+    form_class = forms.PanelForm
     success_url = urlresolvers.reverse_lazy('user_panels')
 
     def form_valid(self, form):
         user = self.request.user
-        user.user_panels.panels_disabled = [key for key, val in form.cleaned_data.iteritems() if not val]
+        user.panels.set_panels([key for key, val in form.cleaned_data.iteritems() if val])
         user.save()
-        messages.success(self.request, _("You have successfully set your panel defaults."))
         return super(PanelView, self).form_valid(form)
     
     def get_initial(self):
-        user = self.request.user
-        return dict(zip(user.user_panels.panels_disabled, [False] * len(user.user_panels.panels_disabled)))
+        return dict(zip(self.request.user.panels.layout.keys(), [True] * len(self.request.user.panels.layout)))
     
     def get_form_kwargs(self):
         """
@@ -424,7 +422,7 @@ class PanelView(generic_views.FormView):
         copying request.POST so we can change users' selection on validation.
         """
         kwargs = {'initial': self.get_initial()}
-        if self.request.method in ('POST', 'PUT'):
+        if self.request.method == 'POST':
             kwargs.update({
                 'data': dict(self.request.POST),
             })

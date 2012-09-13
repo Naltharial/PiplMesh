@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import datetime, hashlib, urllib
+import datetime, hashlib, urllib, bisect, pdb
 
 from django.conf import settings
 from django.contrib.auth import hashers, models as auth_models
@@ -48,15 +48,60 @@ class TwitterAccessToken(mongoengine.EmbeddedDocument):
     key = mongoengine.StringField(max_length=150)
     secret = mongoengine.StringField(max_length=150)
 
-class UserPanels(mongoengine.EmbeddedDocument):
-    panels_collapsed = mongoengine.DictField()
-    panels_order = mongoengine.DictField()
-    panels_disabled = mongoengine.ListField()
+class Panel(mongoengine.EmbeddedDocument):
+    collapsed = mongoengine.BooleanField(default=False)
+    column = mongoengine.IntField()
+    order = mongoengine.IntField()
+
+class Panels(mongoengine.EmbeddedDocument):
+    layout = mongoengine.MapField(mongoengine.EmbeddedDocumentField(Panel))
     
     def get_panels(self):
-        return [panel for panel \
-                in panels.panels_pool.get_all_panels() \
-                if panel not in map(panels.panels_pool.get_panel, self.panels_disabled)]
+        return [panels.panels_pool.get_panel(name) for name in self.layout]
+    
+    def get_columns(self):
+        cols = dict()
+        cols_order = dict()
+        for key in self.layout:
+            c = self.layout[key].column
+            
+            if c == None:
+                continue
+            if not c in cols:
+                cols[c] = []
+                cols_order[c] = []
+
+            # Enforce ordering of panels in column, because self.layout is not ordered
+            pos = bisect.bisect_left(cols_order[c], self.layout[key].order)
+            cols[c].insert(pos, key)
+            cols_order[c].insert(pos, self.layout[key].order)
+        
+        # If no order has been saved, return empty to force default ordering
+        return cols if cols else ''
+    
+    def has_panel(self, panel_name):
+        return panel_name in self.layout
+    
+    def set_panels(self, panels, *args, **kwargs):
+        # Preserve prior settings for kept panels
+        for panel in self.layout.keys():
+            if panel not in panels:
+                del self.layout[panel]
+        
+        # If properties were passed as dicts in kwargs use them, otherwise use existing or default
+        for panel in panels:
+            self.layout[panel] = Panel(
+               collapsed = kwargs['collapsed'][panel] if 'collapsed' in kwargs else
+                   self.layout[panel].collapsed if panel in self.layout else False,
+               column = kwargs['column'][panel] if 'column' in kwargs else
+                   self.layout[panel].column if panel in self.layout else None,
+               order = kwargs['order'][panel] if 'order' in kwargs else
+                   self.layout[panel].order if panel in self.layout else None,
+               )
+    
+    def reset_panels(self):
+        for panel in panels.panels_pool.get_all_panels():
+            self.layout[panel.get_name()] = Panel()
 
 class User(auth.User):
     username = mongoengine.StringField(
@@ -94,14 +139,16 @@ class User(auth.User):
     email_confirmed = mongoengine.BooleanField(default=False)
     email_confirmation_token = mongoengine.EmbeddedDocumentField(EmailConfirmationToken)
     
-    user_panels = mongoengine.EmbeddedDocumentField(UserPanels)
+    panels = mongoengine.EmbeddedDocumentField(Panels)
     
     def __init__(self, *args, **kwargs):
         super(User, self).__init__(*args, **kwargs)
         
         # If the user has not previously saved any panel data, make sure we have an object to query
-        if self.user_panels == None:
-            self.user_panels = UserPanels()
+        if self.panels == None:
+            self.panels = Panels()
+            self.panels.reset_panels()
+            self.save
 
     @models.permalink
     def get_absolute_url(self):
