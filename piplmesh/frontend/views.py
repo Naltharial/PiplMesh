@@ -1,4 +1,4 @@
-import smtplib, pdb
+import smtplib
 
 from django import dispatch, http, template
 from django.conf import settings

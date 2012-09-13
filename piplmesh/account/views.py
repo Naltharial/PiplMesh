@@ -1,4 +1,4 @@
-import json, urllib, urlparse, pdb
+import json, urllib, urlparse
 
 from django import dispatch, http, shortcuts
 from django.conf import settings

@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import datetime, hashlib, urllib, bisect, pdb
+import datetime, hashlib, urllib, bisect
 
 from django.conf import settings
 from django.contrib.auth import hashers, models as auth_models
