@@ -414,7 +414,7 @@ class PanelView(generic_views.FormView):
         return super(PanelView, self).form_valid(form)
     
     def get_initial(self):
-        return dict(zip(self.request.user.panels.layout.keys(), [True] * len(self.request.user.panels.layout)))
+        return dict(zip(self.request.user.panels.active.keys(), [True] * len(self.request.user.panels.active)))
     
     def get_form_kwargs(self):
         """

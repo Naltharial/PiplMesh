@@ -123,11 +123,11 @@ def send_update_on_new_post(sender, post, request, bundle, **kwargs):
 
 def panels_collapse(request):
     if request.method == 'POST':
-        request.user.panels.layout[request.POST['name']].collapsed = True if request.POST['collapsed'] == 'true' else False
+        request.user.panels.active[request.POST['name']].collapsed = True if request.POST['collapsed'] == 'true' else False
         request.user.save()
         return http.HttpResponse()
     else:
-        collapsed = dict(zip(request.user.panels.layout.keys(), [layout.collapsed for name, layout in request.user.panels.layout.iteritems()]))
+        collapsed = dict(zip(request.user.panels.active.keys(), [layout[1].collapsed for layout in request.user.panels.active.iteritems()]))
         return http.HttpResponse(simplejson.dumps(collapsed), mimetype='application/json')
 
 def panels_order(request):
@@ -144,9 +144,10 @@ def panels_order(request):
             columns[name] = column
             orders[name] = order
         
-        request.user.panels.set_panels(request.POST.getlist('names'), column=columns, order=orders)
+        request.user.panels.set_panels(request.POST.getlist('names'), request.POST['number_of_columns'], column=columns, order=orders)
         request.user.save()
 
         return http.HttpResponse()
     else:
-        return http.HttpResponse(simplejson.dumps(request.user.panels.get_columns()), mimetype='application/json')
+        number_of_columns = request.GET['number_of_columns']
+        return http.HttpResponse(simplejson.dumps(request.user.panels.get_columns(number_of_columns)), mimetype='application/json')

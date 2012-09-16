@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import datetime, hashlib, urllib, bisect
+import datetime, hashlib, urllib, bisect, pdb
 
 from django.conf import settings
 from django.contrib.auth import hashers, models as auth_models
@@ -50,20 +50,29 @@ class TwitterAccessToken(mongoengine.EmbeddedDocument):
 
 class Panel(mongoengine.EmbeddedDocument):
     collapsed = mongoengine.BooleanField(default=False)
+
+class Layout(mongoengine.EmbeddedDocument):
     column = mongoengine.IntField()
     order = mongoengine.IntField()
 
+class PanelLayout(mongoengine.EmbeddedDocument):
+    layout = mongoengine.MapField(mongoengine.EmbeddedDocumentField(Layout))
+    
 class Panels(mongoengine.EmbeddedDocument):
-    layout = mongoengine.MapField(mongoengine.EmbeddedDocumentField(Panel))
+    active = mongoengine.MapField(mongoengine.EmbeddedDocumentField(Panel))
+    layouts = mongoengine.MapField(mongoengine.EmbeddedDocumentField(PanelLayout))
     
     def get_panels(self):
-        return [panels.panels_pool.get_panel(name) for name in self.layout]
+        return map(panels.panels_pool.get_panel, self.active.keys())
     
-    def get_columns(self):
+    def get_columns(self, number_of_columns):
+        if not number_of_columns in self.layouts:
+            return ''
+        layout = self.layouts[number_of_columns].layout
         cols = dict()
         cols_order = dict()
-        for key in self.layout:
-            c = self.layout[key].column
+        for key, panel in layout.iteritems():
+            c = panel.column
             
             if c == None:
                 continue
@@ -71,37 +80,61 @@ class Panels(mongoengine.EmbeddedDocument):
                 cols[c] = []
                 cols_order[c] = []
 
-            # Enforce ordering of panels in column, because self.layout is not ordered
-            pos = bisect.bisect_left(cols_order[c], self.layout[key].order)
+            # Enforce ordering of panels in column, because layout is not ordered
+            pos = bisect.bisect_left(cols_order[c], panel.order)
             cols[c].insert(pos, key)
-            cols_order[c].insert(pos, self.layout[key].order)
+            cols_order[c].insert(pos, panel.order)
         
         # If no order has been saved, return empty to force default ordering
         return cols if cols else ''
     
     def has_panel(self, panel_name):
-        return panel_name in self.layout
+        return panel_name in self.active
     
     def set_panels(self, panels, *args, **kwargs):
         # Preserve prior settings for kept panels
-        for panel in self.layout.keys():
+        for panel in self.active:
             if panel not in panels:
-                del self.layout[panel]
-        
-        # If properties were passed as dicts in kwargs use them, otherwise use existing or default
-        for panel in panels:
-            self.layout[panel] = Panel(
-               collapsed = kwargs['collapsed'][panel] if 'collapsed' in kwargs else
-                   self.layout[panel].collapsed if panel in self.layout else False,
-               column = kwargs['column'][panel] if 'column' in kwargs else
-                   self.layout[panel].column if panel in self.layout else None,
-               order = kwargs['order'][panel] if 'order' in kwargs else
-                   self.layout[panel].order if panel in self.layout else None,
-               )
+                for key in self.layouts:
+                    del self.layouts[key].layout[panel]
+        self.active = dict((k,v) for k,v in self.active.iteritems() if k in panels)
+
+        # If number of columns was passed as the first argument, we're only reordering a single layout
+        if len(args):
+            pl = PanelLayout()
+            
+            for panel in panels:
+                if panel not in self.active:
+                    self.active[panel] = Panel(collapsed = kwargs['collapsed'][panel] if 'collapsed' in kwargs else False)
+                
+                # If properties were passed as dicts in kwargs use them, otherwise use existing or default
+                pl.layout[panel] = Layout(
+                   column = kwargs['column'][panel] if 'column' in kwargs else
+                       self.layouts[args[0]].layout[panel].column if panel in self.layout else None,
+                   order = kwargs['order'][panel] if 'order' in kwargs else
+                       self.layouts[args[0]].layout[panel].order if panel in self.layout else None,
+                   )
+            
+            self.layouts[args[0]] = pl
+        # Otherwise, we have to restructure the entire set
+        else:
+            for cols in self.layouts:
+                pl = PanelLayout()
+            
+                for panel in panels:
+                    if panel not in self.active:
+                        self.active[panel] = Panel(collapsed = kwargs['collapsed'][panel] if 'collapsed' in kwargs else False)
+                    
+                    pl.layout[panel] = Layout(
+                       column = self.layouts[cols].layout[panel].column if panel in self.layouts[cols].layout else None,
+                       order = self.layouts[cols].layout[panel].order if panel in self.layouts[cols].layout else None,
+                       )
+                
+                self.layouts[cols] = pl
     
     def reset_panels(self):
         for panel in panels.panels_pool.get_all_panels():
-            self.layout[panel.get_name()] = Panel()
+            self.active[panel.get_name()] = Panel()
 
 class User(auth.User):
     username = mongoengine.StringField(
