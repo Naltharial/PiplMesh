@@ -49,9 +49,10 @@ class TwitterAccessToken(mongoengine.EmbeddedDocument):
     secret = mongoengine.StringField(max_length=150)
 
 class Panel(mongoengine.EmbeddedDocument):
-    collapsed = mongoengine.BooleanField(default=False)
+    pass
 
 class Layout(mongoengine.EmbeddedDocument):
+    collapsed = mongoengine.BooleanField(default=False)
     column = mongoengine.IntField()
     order = mongoengine.IntField()
 
@@ -64,6 +65,32 @@ class Panels(mongoengine.EmbeddedDocument):
     
     def get_panels(self):
         return map(panels.panels_pool.get_panel, self.active.keys())
+    
+    def get_collapsed(self, number_of_columns):
+        if number_of_columns in self.layouts:
+            collapsed = [layout[1].collapsed for layout in self.layouts[number_of_columns].layout.iteritems()]
+        else:
+            collapsed = [False] * len(self.active.keys())
+        
+        return dict(zip(self.active.keys(), collapsed))
+    
+    def set_collapsed(self, number_of_columns, name, panel_collapsed):
+        #pdb.set_trace()
+        pl = PanelLayout()
+        if number_of_columns in self.layouts:
+            for panel in self.active:
+                default = self.layouts[number_of_columns].layout[panel]
+                
+                pl.layout[panel] = Layout(
+                       collapsed = panel_collapsed if panel == name else default.collapsed,
+                       column = default.column,
+                       order = default.order,
+                       )
+        else:
+            for panel in self.active:
+                pl.layout[panel] = Layout(collapsed=panel_collapsed if panel == name else False)
+            
+        self.layouts[number_of_columns] = pl
     
     def get_columns(self, number_of_columns):
         if not number_of_columns in self.layouts:
@@ -104,15 +131,14 @@ class Panels(mongoengine.EmbeddedDocument):
             pl = PanelLayout()
             
             for panel in panels:
-                if panel not in self.active:
-                    self.active[panel] = Panel(collapsed = kwargs['collapsed'][panel] if 'collapsed' in kwargs else False)
-                
                 # If properties were passed as dicts in kwargs use them, otherwise use existing or default
                 pl.layout[panel] = Layout(
+                   collapsed = kwargs['collapsed'][panel] if 'collapsed' in kwargs else
+                       self.layouts[args[0]].layout[panel].collapsed if args[0] in self.layouts else False,
                    column = kwargs['column'][panel] if 'column' in kwargs else
-                       self.layouts[args[0]].layout[panel].column if panel in self.layout else None,
+                       self.layouts[args[0]].layout[panel].column if args[0] in self.layouts else None,
                    order = kwargs['order'][panel] if 'order' in kwargs else
-                       self.layouts[args[0]].layout[panel].order if panel in self.layout else None,
+                       self.layouts[args[0]].layout[panel].order if args[0] in self.layouts else None,
                    )
             
             self.layouts[args[0]] = pl
@@ -122,12 +148,10 @@ class Panels(mongoengine.EmbeddedDocument):
                 pl = PanelLayout()
             
                 for panel in panels:
-                    if panel not in self.active:
-                        self.active[panel] = Panel(collapsed = kwargs['collapsed'][panel] if 'collapsed' in kwargs else False)
-                    
                     pl.layout[panel] = Layout(
-                       column = self.layouts[cols].layout[panel].column if panel in self.layouts[cols].layout else None,
-                       order = self.layouts[cols].layout[panel].order if panel in self.layouts[cols].layout else None,
+                       collapsed = self.layouts[cols].layout[panel].collapsed,
+                       column = self.layouts[cols].layout[panel].column,
+                       order = self.layouts[cols].layout[panel].order,
                        )
                 
                 self.layouts[cols] = pl

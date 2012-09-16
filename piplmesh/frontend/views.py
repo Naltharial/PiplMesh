@@ -123,12 +123,11 @@ def send_update_on_new_post(sender, post, request, bundle, **kwargs):
 
 def panels_collapse(request):
     if request.method == 'POST':
-        request.user.panels.active[request.POST['name']].collapsed = True if request.POST['collapsed'] == 'true' else False
+        request.user.panels.set_collapsed(request.POST['number_of_columns'], request.POST['name'], True if request.POST['collapsed'] == 'true' else False)
         request.user.save()
         return http.HttpResponse()
     else:
-        collapsed = dict(zip(request.user.panels.active.keys(), [layout[1].collapsed for layout in request.user.panels.active.iteritems()]))
-        return http.HttpResponse(simplejson.dumps(collapsed), mimetype='application/json')
+        return http.HttpResponse(simplejson.dumps(request.user.panels.get_collapsed(request.GET['number_of_columns'])), mimetype='application/json')
 
 def panels_order(request):
     if request.method == 'POST':

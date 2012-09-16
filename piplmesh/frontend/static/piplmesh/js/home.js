@@ -79,7 +79,9 @@ function orderPanels() {
 }
 
 function collapsePanels() {
-    $.getJSON(URLS.panels_collapse, function (data, textStatus, jqXHR) {
+    $.getJSON(URLS.panels_collapse, {
+        'number_of_columns': howManyColumns()
+    }, function (data, textStatus, jqXHR) {
         $.each(data, function (name, collapsed) {
             if (collapsed) {
                 $('#panel-' + name + ' .content').css('display', 'none');
@@ -212,7 +214,8 @@ $(document).ready(function () {
 
         $.post(URLS.panels_collapse, {
             'name': name,
-            'collapsed': collapsed
+            'collapsed': collapsed,
+            'number_of_columns': howManyColumns()
         });
     });
 
