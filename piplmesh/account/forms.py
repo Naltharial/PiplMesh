@@ -1,4 +1,5 @@
 from django import forms
+from django.core import exceptions
 from django.forms.extras import widgets
 from django.utils.translation import ugettext_lazy as _
 
@@ -168,9 +169,7 @@ class EmailConfirmationProcessTokenForm(forms.Form):
 
 class PanelFormMetaclass(forms.Form.__metaclass__):
     def __new__(cls, name, bases, attrs):
-        panel_list = panels.panels_pool.get_all_panels()
-        
-        for panel in panel_list:
+        for panel in panels.panels_pool.get_all_panels():
             attrs[panel.get_name()] = forms.BooleanField(required=False, initial=False)
         
         return super(PanelFormMetaclass, cls).__new__(cls, name, bases, attrs)
@@ -179,44 +178,27 @@ class PanelForm(forms.Form):
     """
     Form for selecting homepage panels.
     """
+    
     __metaclass__ = PanelFormMetaclass
     
     def __init__(self, *args, **kwargs):
-        super(forms.Form, self).__init__(*args, **kwargs)
+        super(PanelForm, self).__init__(*args, **kwargs)
         
         # Add information about dependencies to display in template
-        for name in self.fields:
+        for name, field in self.fields.items():
             panel = panels.panels_pool.get_panel(name)
-            self.fields[name].dependencies = panel.get_dependencies()
+            field.dependencies = panel.get_dependencies()
     
     def clean(self):
-        cleaned_data = super(forms.Form, self).clean()
-        add = []
+        cleaned_data = super(PanelForm, self).clean()
         
-        while True:
-            if add:
-                # User has not selected some of the dependencies, so we select them
-                for val in add:
-                    cleaned_data[val] = True
-                    self.data[val] = 'on'
-                add = []
+        for panel_name, panel_checked in cleaned_data.items():
+            if not panel_checked:
+                continue
             
-            for name, val in cleaned_data.iteritems():
-                if not val:
-                    continue
-                
-                panel = panels.panels_pool.get_panel(name)
-                errors = []
-                for dep in panel.get_dependencies():
-                    if not cleaned_data[dep]:
-                        errors.append(_("Panel '%s' depends on panel '%s', it has been selected." % (name, dep)))
-                        add.append(dep)
-                
-                if errors:
-                    self._errors[name] = self.error_class(errors)
-                   
-            # All requirements satisfied
-            if not add:
-                break
+            panel = panels.panels_pool.get_panel(panel_name)
+            for dep in panel.get_dependencies():
+                if not cleaned_data[dep]:
+                    raise exceptions.ValidationError(_('Dependencies not satisfied.'))
         
         return cleaned_data

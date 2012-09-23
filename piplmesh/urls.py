@@ -83,6 +83,7 @@ urlpatterns = patterns('',
     # Panels
     url(r'^panels/collapse/$', frontend_views.panels_collapse, name='panels_collapse'),
     url(r'^panels/order/$', frontend_views.panels_order, name='panels_order'),
+    url(r'^panels/validate/$', frontend_views.panels_validate, name='panels_validate'),
 )
 
 if getattr(settings, 'DEBUG', False):

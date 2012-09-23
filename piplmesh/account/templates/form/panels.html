@@ -1,6 +1,6 @@
 {% load i18n %}
 
-<form action="{{ form_action }}" method="post" id="panel_form">
+<form action="{{ form_action }}" method="post" id="panel_form" onsubmit="return validatePanels(this)">
     {{ form.non_field_errors }}
     {% csrf_token %}
     {% with next|default:request_get_next|default:"" as next_url %}

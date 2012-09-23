@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import datetime, hashlib, urllib, bisect, pdb
+import datetime, hashlib, urllib, bisect
 
 from django.conf import settings
 from django.contrib.auth import hashers, models as auth_models
@@ -75,7 +75,6 @@ class Panels(mongoengine.EmbeddedDocument):
         return dict(zip(self.active.keys(), collapsed))
     
     def set_collapsed(self, number_of_columns, name, panel_collapsed):
-        #pdb.set_trace()
         pl = PanelLayout()
         if number_of_columns in self.layouts:
             for panel in self.active:
@@ -124,8 +123,12 @@ class Panels(mongoengine.EmbeddedDocument):
             if panel not in panels:
                 for key in self.layouts:
                     del self.layouts[key].layout[panel]
-        self.active = dict((k,v) for k,v in self.active.iteritems() if k in panels)
-
+        self.active = dict((k,v) for k,v in self.active.items() if k in panels)
+        
+        for panel in panels:
+            if panel not in self.active:
+                self.active[panel] = Panel()
+        
         # If number of columns was passed as the first argument, we're only reordering a single layout
         if len(args):
             pl = PanelLayout()
@@ -144,17 +147,27 @@ class Panels(mongoengine.EmbeddedDocument):
             self.layouts[args[0]] = pl
         # Otherwise, we have to restructure the entire set
         else:
-            for cols in self.layouts:
-                pl = PanelLayout()
-            
-                for panel in panels:
-                    pl.layout[panel] = Layout(
-                       collapsed = self.layouts[cols].layout[panel].collapsed,
-                       column = self.layouts[cols].layout[panel].column,
-                       order = self.layouts[cols].layout[panel].order,
-                       )
+            if self.layouts:
+                for cols in self.layouts:
+                    pl = PanelLayout()
                 
-                self.layouts[cols] = pl
+                    for panel in panels:
+                        prior = self.layouts[cols].layout
+                        pl.layout[panel] = Layout(
+                           collapsed = prior[panel].collapsed if panel in prior else False,
+                           column = prior[panel].column if panel in prior else None,
+                           order = prior[panel].order if panel in prior else None,
+                           )
+                    
+                    self.layouts[cols] = pl
+            else:
+                pl = PanelLayout()
+                
+                for panel in panels:
+                    pl.layout[panel] = Layout()
+                
+                for i in range(5):
+                    self.layouts[str(i)] = pl
     
     def reset_panels(self):
         for panel in panels.panels_pool.get_all_panels():

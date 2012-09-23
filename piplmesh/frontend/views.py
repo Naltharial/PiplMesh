@@ -15,6 +15,7 @@ from mongogeneric import detail
 
 from pushserver.utils import updates
 
+from piplmesh import panels
 from piplmesh.account import models as account_models
 from piplmesh.api import models as api_models, resources, signals
 from piplmesh.frontend import forms
@@ -132,13 +133,13 @@ def panels_collapse(request):
 def panels_order(request):
     if request.method == 'POST':
         order = 0
-        oldc = None
+        old_column = None
         columns, orders = dict(), dict()
         for name, column in zip(request.POST.getlist('names'), request.POST.getlist('columns')):
             column = int(column)
-            if oldc != column:
+            if old_column != column:
                 order = 0
-                oldc = column
+                old_column = column
             order += 1
             columns[name] = column
             orders[name] = order
@@ -150,3 +151,34 @@ def panels_order(request):
     else:
         number_of_columns = request.GET['number_of_columns']
         return http.HttpResponse(simplejson.dumps(request.user.panels.get_columns(number_of_columns)), mimetype='application/json')
+
+def panels_validate(request):
+    selected_panels = request.POST.getlist('panels')
+    dependencies = {}
+    dependencies['status'] = True
+    dependencies['panels'] = {}
+    
+    def panel_dependencies(name, selected):
+        add = []
+        
+        while True:
+            add_length = len(add)
+            panel = panels.panels_pool.get_panel(name)
+            for dep in panel.get_dependencies():
+                if not dep in selected and not dep in add:
+                    add.append(dep)
+            
+            # All requirements satisfied
+            if add_length == len(add):
+                break
+        
+        add = map(panels.panels_pool.get_panel, add)
+        return [panel.get_name() for panel in add]
+    
+    for panel in selected_panels:
+        dep = panel_dependencies(panel, selected_panels)
+        if (dep):
+            dependencies['status'] = False
+            dependencies['panels'][panel] = dep
+    
+    return http.HttpResponse(simplejson.dumps(dependencies), mimetype='application/json')

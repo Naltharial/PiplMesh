@@ -409,24 +409,12 @@ class PanelView(generic_views.FormView):
 
     def form_valid(self, form):
         user = self.request.user
-        user.panels.set_panels([key for key, val in form.cleaned_data.iteritems() if val])
+        user.panels.set_panels([panel for panel, checked in form.cleaned_data.items() if checked])
         user.save()
         return super(PanelView, self).form_valid(form)
     
     def get_initial(self):
         return dict(zip(self.request.user.panels.active.keys(), [True] * len(self.request.user.panels.active)))
-    
-    def get_form_kwargs(self):
-        """
-        Returns the keyword arguments for instanciating the form,
-        copying request.POST so we can change users' selection on validation.
-        """
-        kwargs = {'initial': self.get_initial()}
-        if self.request.method == 'POST':
-            kwargs.update({
-                'data': dict(self.request.POST),
-            })
-        return kwargs
 
 def logout(request):
     """

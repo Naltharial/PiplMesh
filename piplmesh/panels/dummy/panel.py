@@ -16,11 +16,11 @@ class DummyPanel(panels.BasePanel):
         })
         return context
    
-class DummyTestPanel(DummyPanel):
+class DummyDependencyPanel(DummyPanel):
     dependencies = ('dummy',)
     
     def get_context(self, context):
-        context = super(DummyTestPanel, self).get_context(context)
+        context = super(DummyDependencyPanel, self).get_context(context)
 
         context.update({
             'header': _("Dummy test panel"),
@@ -29,4 +29,4 @@ class DummyTestPanel(DummyPanel):
 
 if settings.DEBUG:
     panels.panels_pool.register(DummyPanel)
-    panels.panels_pool.register(DummyTestPanel)
+    panels.panels_pool.register(DummyDependencyPanel)
