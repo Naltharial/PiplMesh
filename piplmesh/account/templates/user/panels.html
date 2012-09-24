@@ -9,9 +9,7 @@
     <script src="{% static "piplmesh/js/panels.js" %}" type="text/javascript"></script>
     <script type="text/javascript">
         /* <![CDATA[ */
-        var URLS = {
-            'panels_validate': '{% filter escapejs %}{% url "panels_validate" %}{% endfilter %}'
-        };
+        var panels = $.parseJSON('{{ panels|safe }}');
         /* ]]> */
     </script>
 {% endblock %}

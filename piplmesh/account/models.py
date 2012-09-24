@@ -66,6 +66,9 @@ class Panels(mongoengine.EmbeddedDocument):
     def get_panels(self):
         return map(panels.panels_pool.get_panel, self.active.keys())
     
+    def get_all_panels(self):
+        return panels.panels_pool.get_all_panels()
+    
     def get_collapsed(self, number_of_columns):
         if number_of_columns in self.layouts:
             collapsed = [layout[1].collapsed for layout in self.layouts[number_of_columns].layout.iteritems()]
@@ -150,7 +153,7 @@ class Panels(mongoengine.EmbeddedDocument):
             if self.layouts:
                 for cols in self.layouts:
                     pl = PanelLayout()
-                
+                    
                     for panel in panels:
                         prior = self.layouts[cols].layout
                         pl.layout[panel] = Layout(

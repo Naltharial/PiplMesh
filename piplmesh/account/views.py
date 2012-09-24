@@ -8,7 +8,7 @@ from django.core import urlresolvers
 from django.template import loader
 from django.views import generic as generic_views
 from django.views.generic import simple, edit as edit_views
-from django.utils import crypto, timezone, translation
+from django.utils import crypto, timezone, translation, simplejson
 from django.utils.translation import ugettext_lazy as _
 
 from pushserver import signals
@@ -415,6 +415,14 @@ class PanelView(generic_views.FormView):
     
     def get_initial(self):
         return dict(zip(self.request.user.panels.active.keys(), [True] * len(self.request.user.panels.active)))
+    
+    def get_context_data(self, **kwargs):
+        context = super(PanelView, self).get_context_data(**kwargs)
+        
+        panels = {panel.get_name(): panel.dependencies for panel in self.request.user.panels.get_all_panels()}
+        
+        context['panels'] = simplejson.dumps(panels)
+        return context
 
 def logout(request):
     """
