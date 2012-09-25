@@ -1,6 +1,6 @@
 {% extends "plain.html" %}
 
-{% load future i18n staticfiles %}
+{% load future i18n staticfiles account %}
 
 {% block title %}{% trans "Panels" %}{% endblock %}
 
@@ -9,17 +9,13 @@
     <script src="{% static "piplmesh/js/panels.js" %}" type="text/javascript"></script>
     <script type="text/javascript">
         /* <![CDATA[ */
-        var panels = $.parseJSON('{{ panels|safe }}');
+        var panels = $.parseJSON('{{ panels|json }}');
         /* ]]> */
     </script>
 {% endblock %}
 
 {% block content %}
-    <div id="menu_list">
-        <p><a href="{% url "profile" username=user.username %}">{% trans "Profile" %}</a></p>
-        <p><a href="{% url "account" %}">{% trans "Account" %}</a></p>
-        <p id="current_item"><a href="{% url "user_panels" %}">{% trans "Panels" %}</a></p>
-    </div>
+    {% include "user/menu.html" %}
     <div class="panels">
         {% with form_submit=_("Submit") %}
             {% include "form/panels.html" %}

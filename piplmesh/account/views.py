@@ -8,7 +8,7 @@ from django.core import urlresolvers
 from django.template import loader
 from django.views import generic as generic_views
 from django.views.generic import simple, edit as edit_views
-from django.utils import crypto, timezone, translation, simplejson
+from django.utils import crypto, timezone, translation
 from django.utils.translation import ugettext_lazy as _
 
 from pushserver import signals
@@ -419,9 +419,7 @@ class PanelView(generic_views.FormView):
     def get_context_data(self, **kwargs):
         context = super(PanelView, self).get_context_data(**kwargs)
         
-        panels = {panel.get_name(): panel.dependencies for panel in self.request.user.panels.get_all_panels()}
-        
-        context['panels'] = simplejson.dumps(panels)
+        context['panels'] = {panel.get_name(): panel.dependencies for panel in self.request.user.panels.get_all_panels()}
         return context
 
 def logout(request):
@@ -492,7 +490,8 @@ def user_login_message(sender, request, user, **kwargs):
     Shows success login message.
     """
 
-    messages.success(request, _("You have been successfully logged in."))
+    # We fail silently because in tests messages middleware is not setup early enough
+    messages.success(request, _("You have been successfully logged in."), fail_silently=True)
 
 @dispatch.receiver(auth_signals.user_logged_out)
 def user_logout_message(sender, request, user, **kwargs):
@@ -500,4 +499,5 @@ def user_logout_message(sender, request, user, **kwargs):
     Shows success logout message.
     """
 
-    messages.success(request, _("You have been successfully logged out."))
+    # We fail silently because in tests messages middleware is not setup early enough
+    messages.success(request, _("You have been successfully logged out."), fail_silently=True)

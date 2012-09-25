@@ -1,4 +1,7 @@
 from django import template
+from django.core.serializers import serialize
+from django.utils import safestring, simplejson
+from django.db.models import query
 
 register = template.Library()
 
@@ -10,3 +13,9 @@ def user_image(context, user=None):
     return {
         'user_image_url': user.get_image_url(),
     }
+
+@register.filter(name='json', is_safe=True)
+def json(obj):
+    if isinstance(object, query.QuerySet):
+        return safestring.mark_safe(serialize('json', obj))
+    return safestring.mark_safe(simplejson.dumps(obj))
