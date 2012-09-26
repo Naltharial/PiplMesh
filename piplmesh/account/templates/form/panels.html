@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n frontend %}
 
 <form action="{{ form_action }}" method="post" id="panel_form" onsubmit="return validatePanels(this)">
     {{ form.non_field_errors }}
@@ -19,16 +19,18 @@
                         <label for="{{ field.id_for_label }}">
                             {{ field.label }}
                         </label>
-                        {% if field.field.dependencies %}
+                        {% with panels|lookup:field.name as panel_dependencies %}
+                        {% if panel_dependencies %}
                             <div class="dependencies">
                                 {% trans "Required panels" %}:
                                 <ul>
-                                    {% for dep in field.field.dependencies %}
-                                        <li>{{ dep }}</li>
+                                    {% for dependency in panel_dependencies %}
+                                        <li>{{ dependency }}</li>
                                     {% endfor %}
                                 </ul>
                             </div>
                         {% endif %}
+                        {% endwith %}
                     </div>
                     <div class="input">{{ field }}</div>
                 </li>

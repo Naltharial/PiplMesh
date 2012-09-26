@@ -170,7 +170,7 @@ class EmailConfirmationProcessTokenForm(forms.Form):
 class PanelFormMetaclass(forms.Form.__metaclass__):
     def __new__(cls, name, bases, attrs):
         for panel in panels.panels_pool.get_all_panels():
-            attrs[panel.get_name()] = forms.BooleanField(required=False, initial=False)
+            attrs[panel.get_name()] = forms.BooleanField(required=False)
         
         return super(PanelFormMetaclass, cls).__new__(cls, name, bases, attrs)
 
@@ -183,22 +183,17 @@ class PanelForm(forms.Form):
     
     def __init__(self, *args, **kwargs):
         super(PanelForm, self).__init__(*args, **kwargs)
-        
-        # Add information about dependencies to display in template
-        for name, field in self.fields.items():
-            panel = panels.panels_pool.get_panel(name)
-            field.dependencies = panel.get_dependencies()
     
     def clean(self):
         cleaned_data = super(PanelForm, self).clean()
         
-        for panel_name, panel_checked in cleaned_data.items():
-            if not panel_checked:
+        for panel_name, panel_enabled in cleaned_data.items():
+            if not panel_enabled:
                 continue
             
             panel = panels.panels_pool.get_panel(panel_name)
-            for dep in panel.get_dependencies():
-                if not cleaned_data[dep]:
-                    raise exceptions.ValidationError(_('Dependencies not satisfied.'))
+            for dependency in panel.get_dependencies():
+                if not cleaned_data[dependency]:
+                    raise exceptions.ValidationError(_("Dependencies not satisfied."))
         
         return cleaned_data

@@ -163,11 +163,11 @@ def send_update_on_new_notification(sender, document, created, **kwargs):
 
 def panels_collapse(request):
     if request.method == 'POST':
-        request.user.panels.set_collapsed(request.POST['number_of_columns'], request.POST['name'], True if request.POST['collapsed'] == 'true' else False)
+        request.user.set_collapsed(request.POST['number_of_columns'], request.POST['name'], True if request.POST['collapsed'] == 'true' else False)
         request.user.save()
         return http.HttpResponse()
     else:
-        return http.HttpResponse(simplejson.dumps(request.user.panels.get_collapsed(request.GET['number_of_columns'])), mimetype='application/json')
+        return http.HttpResponse(simplejson.dumps(request.user.get_collapsed(request.GET['number_of_columns'])), mimetype='application/json')
 
 def panels_order(request):
     if request.method == 'POST':
@@ -183,11 +183,11 @@ def panels_order(request):
             columns[name] = column
             orders[name] = order
         
-        request.user.panels.set_panels(request.POST.getlist('names'), request.POST['number_of_columns'], column=columns, order=orders)
+        request.user.set_panels(request.POST.getlist('names'), request.POST['number_of_columns'], column=columns, order=orders)
         request.user.save()
 
         return http.HttpResponse()
     else:
         number_of_columns = request.GET['number_of_columns']
-        return http.HttpResponse(simplejson.dumps(request.user.panels.get_columns(number_of_columns)), mimetype='application/json')
+        return http.HttpResponse(simplejson.dumps(request.user.get_columns(number_of_columns)), mimetype='application/json')
 
