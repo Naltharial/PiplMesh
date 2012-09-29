@@ -414,12 +414,11 @@ class PanelView(generic_views.FormView):
         return super(PanelView, self).form_valid(form)
     
     def get_initial(self):
-        return dict(zip(self.request.user.panels.keys(), [True] * len(self.request.user.panels)))
+        return {panel: True for panel in self.request.user.panels.keys()}
     
     def get_context_data(self, **kwargs):
         context = super(PanelView, self).get_context_data(**kwargs)
-        
-        context['panels'] = {panel.get_name(): panel.dependencies for panel in self.request.user.get_all_panels()}
+        context.update({'panels_with_dependencies': {panel.get_name(): panel.dependencies for panel in self.request.user.get_all_panels()}})
         return context
 
 def logout(request):

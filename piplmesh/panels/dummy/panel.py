@@ -23,7 +23,7 @@ class DummyDependencyPanel(DummyPanel):
         context = super(DummyDependencyPanel, self).get_context(context)
 
         context.update({
-            'header': _("Dummy test panel"),
+            'header': _("Dummy dependency panel"),
         })
         return context
 

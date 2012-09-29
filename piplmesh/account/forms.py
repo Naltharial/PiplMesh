@@ -181,9 +181,6 @@ class PanelForm(forms.Form):
     
     __metaclass__ = PanelFormMetaclass
     
-    def __init__(self, *args, **kwargs):
-        super(PanelForm, self).__init__(*args, **kwargs)
-    
     def clean(self):
         cleaned_data = super(PanelForm, self).clean()
         
@@ -193,7 +190,7 @@ class PanelForm(forms.Form):
             
             panel = panels.panels_pool.get_panel(panel_name)
             for dependency in panel.get_dependencies():
-                if not cleaned_data[dependency]:
+                if not cleaned_data.get(dependency, False):
                     raise exceptions.ValidationError(_("Dependencies not satisfied."))
         
         return cleaned_data

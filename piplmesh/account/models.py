@@ -59,13 +59,17 @@ class PanelState(mongoengine.EmbeddedDocument):
     order = mongoengine.IntField()
     
 class Panel(mongoengine.EmbeddedDocument):
+    """
+    This class holds panel instances for a user, their properties and layouts.
+    
+    layout(dict): mapping count of displayed columns(string) to PanelState() object for each count 
+    """
+        
     layout = mongoengine.MapField(mongoengine.EmbeddedDocumentField(PanelState))
     
-    def get_layout(self, columns):
-        if columns in self.layout:
-            return self.layout[columns]
-        else:
-            return False
+    def get_layout(self, columns_count):
+        # Transparently provide either existing or default values
+        return self.layout.get(columns_count, PanelState())
 
 class User(auth.User):
     username = mongoengine.StringField(
@@ -112,7 +116,6 @@ class User(auth.User):
         # If the user has not previously saved any panel data, set up defaults
         if not self.panels:
             self.reset_panels()
-            self.save
 
     @models.permalink
     def get_absolute_url(self):
@@ -204,8 +207,8 @@ class User(auth.User):
         user.save()
         return user
     
-    def get_layouts(self, columns):
-        return dict([(name, panel.get_layout(columns) if panel.get_layout(columns) else PanelState()) for name, panel in self.panels.items()])
+    def get_layouts(self, columns_count):
+        return {name: panel.get_layout(columns_count) for name, panel in self.panels.items()}
     
     def get_panels(self):
         return map(panels.panels_pool.get_panel, self.panels.keys())
@@ -213,69 +216,62 @@ class User(auth.User):
     def get_all_panels(self):
         return panels.panels_pool.get_all_panels()
     
-    def get_collapsed(self, columns):
-        collapsed = [(name, panel.get_layout(columns).collapsed if panel.get_layout(columns) else False) for name, panel in self.panels.items()]
-        return dict(collapsed)
+    def get_collapsed(self, columns_count):
+        return {panel: layout.collapsed for panel, layout in self.get_layouts(columns_count).items()}
     
-    def set_collapsed(self, columns, name, collapsed):
-        self.panels[name].layout[columns] = PanelState(
-               collapsed = collapsed,
-               column = self.panels[name].layout[columns].column if self.panels[name].get_layout(columns) else None,
-               order = self.panels[name].layout[columns].order if self.panels[name].get_layout(columns) else None,
-            )
-            
+    def set_collapsed(self, columns_count, name, collapsed):
+        layout = self.panels[name].get_layout(columns_count)
+        layout.collapsed = collapsed
+        self.panels[name].layout[columns_count] = layout
     
-    def get_columns(self, columns):
+    def get_columns(self, columns_count):
         ordered = False
-        cols = dict()
-        cols_order = dict()
-        unordered = []
-        for key, panel in self.get_layouts(columns).items():
+        columns, columns_order = {}, {}
+        unordered_panels = []
+        for name, panel in self.get_layouts(columns_count).items():
             c = panel.column
             
             if c == None:
-                unordered.append(key)
+                unordered_panels.append(name)
                 continue
             else:
                 ordered = True
             
-            if not c in cols:
-                cols[c] = []
-                cols_order[c] = []
+            if not c in columns:
+                columns[c] = []
+                columns_order[c] = []
 
             # Enforce ordering of panels in column, because layout is not ordered
-            pos = bisect.bisect_left(cols_order[c], panel.order)
-            cols[c].insert(pos, key)
-            cols_order[c].insert(pos, panel.order)
+            pos = bisect.bisect_left(columns_order[c], panel.order)
+            columns[c].insert(pos, name)
+            columns_order[c].insert(pos, panel.order)
         
-        # If no order has been saved, return empty to force default ordering
         if ordered:
-            if unordered:
-                cols[len(cols)] = unordered
-            return cols
+            if unordered_panels:
+                columns[len(columns)] = unordered_panels
+            return columns
         else:
-            return ''
+            return []
     
     def has_panel(self, name):
         return name in self.panels
     
-    def set_panels(self, panels, *args, **kwargs):
+    def set_panels(self, panels):
         # Preserve prior settings for kept panels
-        self.panels = dict((name, self.panels[name] if name in self.panels else Panel()) for name in panels)
+        self.panels = {name: self.panels.get(name, Panel()) for name in panels}
+    
+    def reorder_panels(self, columns_count, column_ordering):
+        """
+        This method reorders panels for a user.
         
-        # If number of columns was passed as the first argument, we're also reordering a layout
-        if len(args):
-            for panel in panels:
-                # If properties were passed as dicts in kwargs use them, otherwise use existing or default
-                self.panels[panel].layout[args[0]] = PanelState(
-                   collapsed = kwargs['collapsed'][panel] if 'collapsed' in kwargs else
-                       self.panels[panel].layout[args[0]].collapsed if args[0] in self.panels[panel].layout else False,
-                   column = kwargs['column'][panel] if 'column' in kwargs else
-                       self.panels[panel].layout[args[0]].column if args[0] in self.panels[panel].layout else None,
-                   order = kwargs['order'][panel] if 'order' in kwargs else
-                       self.panels[panel].layout[args[0]].order if args[0] in self.panels[panel].layout else None,
-                   )
+        columns_count(int): count of columns for which the layout is changed
+        column_ordering(dict): dict() mapping names of columns to a (column(int), order(int)) tuple
+        """
+        
+        for panel, layout in self.get_layouts(columns_count).items():
+            layout.column = column_ordering[panel][0]
+            layout.order = column_ordering[panel][1]
+            self.panels[panel].layout[columns_count] = layout
     
     def reset_panels(self):
-        for panel in panels.panels_pool.get_all_panels():
-            self.panels[panel.get_name()] = Panel()
+        self.panels = {name: Panel() for name in self.get_all_panels()}

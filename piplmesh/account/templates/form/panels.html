@@ -1,6 +1,6 @@
 {% load i18n frontend %}
 
-<form action="{{ form_action }}" method="post" id="panel_form" onsubmit="return validatePanels(this)">
+<form action="{{ form_action }}" method="post" id="panel_form">
     {{ form.non_field_errors }}
     {% csrf_token %}
     {% with next|default:request_get_next|default:"" as next_url %}
@@ -19,17 +19,19 @@
                         <label for="{{ field.id_for_label }}">
                             {{ field.label }}
                         </label>
-                        {% with panels|lookup:field.name as panel_dependencies %}
-                        {% if panel_dependencies %}
+                        <div class="locked">
+                        </div>
+                        {% with panels_with_dependencies|get:field.name as panel_dependencies %}
                             <div class="dependencies">
-                                {% trans "Required panels" %}:
-                                <ul>
-                                    {% for dependency in panel_dependencies %}
-                                        <li>{{ dependency }}</li>
-                                    {% endfor %}
-                                </ul>
+                                {% if panel_dependencies %}
+                                    {% trans "Required panels:" %}
+                                    <ul>
+                                        {% for panel_dependency in panel_dependencies %}
+                                            <li>{{ panel_dependency }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
                             </div>
-                        {% endif %}
                         {% endwith %}
                     </div>
                     <div class="input">{{ field }}</div>

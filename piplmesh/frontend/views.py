@@ -173,17 +173,16 @@ def panels_order(request):
     if request.method == 'POST':
         order = 0
         old_column = None
-        columns, orders = dict(), dict()
+        column_ordering = {}
         for name, column in zip(request.POST.getlist('names'), request.POST.getlist('columns')):
             column = int(column)
             if old_column != column:
                 order = 0
                 old_column = column
             order += 1
-            columns[name] = column
-            orders[name] = order
+            column_ordering[name] = (column, order)
         
-        request.user.set_panels(request.POST.getlist('names'), request.POST['number_of_columns'], column=columns, order=orders)
+        request.user.reorder_panels(request.POST['number_of_columns'], column_ordering)
         request.user.save()
 
         return http.HttpResponse()

@@ -9,15 +9,12 @@ register = template.Library()
 def is_active(current_path, url_path):
     return current_path.startswith(url_path)
 
-@register.filter(name='json', is_safe=True)
+@register.filter
 def json(object):
     if isinstance(object, query.QuerySet):
         return serializers.serialize('json', object)
     return simplejson.dumps(object)
 
 @register.filter
-def lookup(dict, key):
-    if key in dict:
-        return dict[key]
-    else:
-        return False
+def get(dict, key):
+    return dict.get(key)
