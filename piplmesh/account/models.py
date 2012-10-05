@@ -17,7 +17,7 @@ from mongoengine.django import auth
 import uuid
 
 from . import fields, utils
-from .. import panels
+from .. import panels as frontend_panels
 
 LOWER_DATE_LIMIT = 366 * 120
 USERNAME_REGEX = r'[\w.@+-]+'
@@ -62,7 +62,7 @@ class Panel(mongoengine.EmbeddedDocument):
     """
     This class holds panel instances for a user, their properties and layouts.
     
-    layout(dict): mapping count of displayed columns(string) to PanelState() object for each count 
+    :param dict layout: mapping of count of displayed columns (`string`) to `PanelState` objects for that count
     """
         
     layout = mongoengine.MapField(mongoengine.EmbeddedDocumentField(PanelState))
@@ -109,14 +109,14 @@ class User(auth.User):
     email_confirmation_token = mongoengine.EmbeddedDocumentField(EmailConfirmationToken)
     
     panels = mongoengine.MapField(mongoengine.EmbeddedDocumentField(Panel))
-    
+
     def __init__(self, *args, **kwargs):
         super(User, self).__init__(*args, **kwargs)
         
         # If the user has not previously saved any panel data, set up defaults
         if not self.panels:
             self.reset_panels()
-
+    
     @models.permalink
     def get_absolute_url(self):
         return ('profile', (), {'username': self.username})
@@ -211,10 +211,10 @@ class User(auth.User):
         return {name: panel.get_layout(columns_count) for name, panel in self.panels.items()}
     
     def get_panels(self):
-        return map(panels.panels_pool.get_panel, self.panels.keys())
+        return map(frontend_panels.panels_pool.get_panel, self.panels.keys())
     
     def get_all_panels(self):
-        return panels.panels_pool.get_all_panels()
+        return frontend_panels.panels_pool.get_all_panels()
     
     def get_collapsed(self, columns_count):
         return {panel: layout.collapsed for panel, layout in self.get_layouts(columns_count).items()}
@@ -248,7 +248,7 @@ class User(auth.User):
         
         if ordered:
             if unordered_panels:
-                columns[len(columns)] = unordered_panels
+                columns[-1] = unordered_panels
             return columns
         else:
             return []
@@ -264,14 +264,13 @@ class User(auth.User):
         """
         This method reorders panels for a user.
         
-        columns_count(int): count of columns for which the layout is changed
-        column_ordering(dict): dict() mapping names of columns to a (column(int), order(int)) tuple
+        :param int columns_count: count of columns for which the layout is changed
+        :param dict column_ordering: mapping of panel names to a (column (`int`), order (`int`)) `tuple`
         """
         
         for panel, layout in self.get_layouts(columns_count).items():
-            layout.column = column_ordering[panel][0]
-            layout.order = column_ordering[panel][1]
+            layout.column, layout.order = column_ordering[panel]
             self.panels[panel].layout[columns_count] = layout
     
     def reset_panels(self):
-        self.panels = {name: Panel() for name in self.get_all_panels()}
+        self.panels = {panel.get_name(): Panel() for panel in self.get_all_panels()}

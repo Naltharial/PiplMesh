@@ -52,7 +52,7 @@ class PanelsPool(object):
 
     def get_all_panels(self):
         self.discover_panels()
-
+        
         return [panel for (_, panel) in sorted(self.panels.items())]
 
     def get_panel(self, panel_name):

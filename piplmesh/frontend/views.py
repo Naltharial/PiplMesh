@@ -193,7 +193,7 @@ def send_update_on_new_notification(sender, document, created, **kwargs):
 
 def panels_collapse(request):
     if request.method == 'POST':
-        request.user.set_collapsed(request.POST['number_of_columns'], request.POST['name'], True if request.POST['collapsed'] == 'true' else False)
+        request.user.set_collapsed(request.POST['number_of_columns'], request.POST['name'], request.POST['collapsed'] == 'true')
         request.user.save()
         return http.HttpResponse()
     else:
@@ -219,4 +219,3 @@ def panels_order(request):
     else:
         number_of_columns = request.GET['number_of_columns']
         return http.HttpResponse(simplejson.dumps(request.user.get_columns(number_of_columns)), mimetype='application/json')
-

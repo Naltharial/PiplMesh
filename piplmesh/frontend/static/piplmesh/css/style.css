@@ -538,31 +538,31 @@ button.browserid-signin:hover {
 }
 
 /* ------------------ PANELS ---------------------------- */
-#panel_form .field {
+#content .panels form .field {
     overflow: auto;
 }
 
-#panel_form .field .text {
+#content .panels form .field .text {
     float: left;
 }
 
-#panel_form .field .text .locked {
+#content .panels form .field .text .locked {
     color: red;
     font-size: 10px;
     text-align: right;
 }
 
-#panel_form .field .text .dependencies {
+#content .panels form .field .text .dependencies {
     color: #006600;
     font-size: 10px;
     text-align: right;
 }
 
-#panel_form .field .input {
+#content .panels form .field .input {
     float: left;
 }
 
-#panel_form .field .input input {
+#content .panels form .field .input input {
     width: 25px;
 }
 

@@ -1,43 +1,28 @@
+{% extends "form/form.html" %}
+
 {% load i18n frontend %}
 
-<form action="{{ form_action }}" method="post" id="panel_form">
-    {{ form.non_field_errors }}
-    {% csrf_token %}
-    {% with next|default:request_get_next|default:"" as next_url %}
-        <div style="display: none;"><input type="hidden" name="{{ REDIRECT_FIELD_NAME }}" value="{{ next_url }}" /></div>
-    {% endwith %}
-    {% if form.fields %}
-        <ul class="form_fields">
-            {% for field in form %}
-                {% if field.errors %}
-                    <li class="field_error">
-                        {{ field.errors }}
-                    </li>
-                {% endif %}
-                <li class="field">
-                    <div class="text">
-                        <label for="{{ field.id_for_label }}">
-                            {{ field.label }}
-                        </label>
-                        <div class="locked">
-                        </div>
-                        {% with panels_with_dependencies|get:field.name as panel_dependencies %}
-                            <div class="dependencies">
-                                {% if panel_dependencies %}
-                                    {% trans "Required panels:" %}
-                                    <ul>
-                                        {% for panel_dependency in panel_dependencies %}
-                                            <li>{{ panel_dependency }}</li>
-                                        {% endfor %}
-                                    </ul>
-                                {% endif %}
-                            </div>
-                        {% endwith %}
-                    </div>
-                    <div class="input">{{ field }}</div>
-                </li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-    <div class="buttons"><input type="submit" value="{{ form_submit }}" /></div>
-</form>
+{% block field %}
+    <li class="field">
+        <div class="text">
+            <label for="{{ field.id_for_label }}">
+                {{ field.label }}
+            </label>
+            <div class="locked">
+            </div>
+            {% with panels_with_dependencies|get:field.name as panel_dependencies %}
+                <div class="dependencies">
+                    {% if panel_dependencies %}
+                        {% trans "Required panels:" %}
+                        <ul>
+                            {% for panel_dependency in panel_dependencies %}
+                                <li>{{ panel_dependency }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endwith %}
+        </div>
+        <div class="input">{{ field }}</div>
+    </li>
+{% endblock %}
