@@ -98,6 +98,7 @@ class UserBasicInfoForm(forms.Form):
         label=_("Gender"),
         choices=fields.GENDER_CHOICES,
         widget=forms.RadioSelect(),
+        required=False,
     )
     birthdate = form_fields.LimitedDateTimeField(
         upper_limit=models.upper_birthdate_limit,
