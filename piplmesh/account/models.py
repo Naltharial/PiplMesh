@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-import datetime, hashlib, urllib, bisect, uuid
+import datetime, hashlib, urllib, uuid
 
 from django.conf import settings
 from django.contrib.auth import hashers, models as auth_models
@@ -221,6 +221,8 @@ class User(auth.User):
             while len(panels) <= column:
                 panels.append([])
             panels[column].append(name)
+           
+        return panels
     
     def has_panel(self, name):
         return name in self.panels

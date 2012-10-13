@@ -228,4 +228,4 @@ def panels_order(request):
         return http.HttpResponse()
     else:
         number_of_columns = request.GET['number_of_columns']
-        return http.HttpResponse(simplejson.dumps(request.user.get_columns(number_of_columns)), mimetype='application/json')
+        return http.HttpResponse(simplejson.dumps(request.user.get_columns(number_of_columns) or ''), mimetype='application/json')

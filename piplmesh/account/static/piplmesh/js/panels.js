@@ -1,6 +1,5 @@
 $(document).ready(function () {
     var panels_requiredby = {}
-    var panels_savestate = {}
     
     $('#content .panels form').on('submit', function (event) {
         $('input[type="checkbox"]:disabled', this).prop('disabled', false);
@@ -42,13 +41,13 @@ $(document).ready(function () {
             })
             list.appendTo(panel_locktext);
             
-            panels_savestate[panel] = panel_checkbox.prop('checked');
+            panel_checkbox.data('previous_state', panel_checkbox.prop('checked'));
             panel_checkbox.prop('checked', true).prop('disabled', true);
             changed = true;
         }
         else {
             if (panel_checkbox.prop('disabled')) {
-                panel_checkbox.prop('disabled', false).prop('checked', panels_savestate[panel]);
+                panel_checkbox.prop('disabled', false).prop('checked', panel_checkbox.data('previous_state'));
                 panel_locktext.text('');
                 changed = true;
             }
