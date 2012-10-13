@@ -418,9 +418,10 @@ class PanelView(generic_views.FormView):
     
     def get_context_data(self, **kwargs):
         context = super(PanelView, self).get_context_data(**kwargs)
-        context.update({'panels_with_dependencies':
-                            {panel.get_name(): panel.dependencies for panel in self.request.user.get_all_panels()}
-                        })
+        context.update({
+            'panels_with_dependencies': {panel.get_name(): panel.dependencies for panel in self.request.user.get_panels()}
+        })
+        
         return context
 
 def logout(request):

@@ -17,7 +17,7 @@ from mongoengine.django import auth
 from missing import timezone as timezone_missing
 
 from . import fields, utils
-from .. import panels as frontend_panels
+from .. import panels as piplmesh_panels
 
 LOWER_DATE_LIMIT = 366 * 120 # days
 USERNAME_REGEX = r'[\w.@+-]+'
@@ -108,14 +108,7 @@ class User(auth.User):
     email_confirmed = mongoengine.BooleanField(default=False)
     email_confirmation_token = mongoengine.EmbeddedDocumentField(EmailConfirmationToken)
     
-    panels = mongoengine.MapField(mongoengine.EmbeddedDocumentField(Panel))
-
-    def __init__(self, *args, **kwargs):
-        super(User, self).__init__(*args, **kwargs)
-        
-        # If the user has not previously saved any panel data, set up defaults
-        if not self.panels:
-            self.reset_panels()
+    panels = mongoengine.MapField(mongoengine.EmbeddedDocumentField(Panel), default=lambda: {panel.get_name(): Panel() for panel in piplmesh_panels.panels_pool.get_all_panels()})
     
     @models.permalink
     def get_absolute_url(self):
@@ -211,10 +204,7 @@ class User(auth.User):
         return {name: panel.get_layout(columns_count) for name, panel in self.panels.items()}
     
     def get_panels(self):
-        return map(frontend_panels.panels_pool.get_panel, self.panels.keys())
-    
-    def get_all_panels(self):
-        return frontend_panels.panels_pool.get_all_panels()
+        return map(piplmesh_panels.panels_pool.get_panel, self.panels.keys())
     
     def get_collapsed(self, columns_count):
         return {panel: layout.collapsed for panel, layout in self.get_layouts(columns_count).items()}
@@ -225,33 +215,12 @@ class User(auth.User):
         self.panels[name].layout[columns_count] = layout
     
     def get_columns(self, columns_count):
-        ordered = False
-        columns, columns_order = {}, {}
-        unordered_panels = []
-        for name, panel in self.get_layouts(columns_count).items():
-            c = panel.column
-            
-            if c == None:
-                unordered_panels.append(name)
-                continue
-            else:
-                ordered = True
-            
-            if not c in columns:
-                columns[c] = []
-                columns_order[c] = []
-
-            # Enforce ordering of panels in column, because layout is not ordered
-            pos = bisect.bisect_left(columns_order[c], panel.order)
-            columns[c].insert(pos, name)
-            columns_order[c].insert(pos, panel.order)
-        
-        if ordered:
-            if unordered_panels:
-                columns[-1] = unordered_panels
-            return columns
-        else:
-            return []
+        panels = []
+        for column, order, name in sorted([(panel.column, panel.order, name) for name, panel in self.get_layouts(columns_count).items() if panel.column is not None]):
+            assert column >= 0
+            while len(panels) <= column:
+                panels.append([])
+            panels[column].append(name)
     
     def has_panel(self, name):
         return name in self.panels
@@ -269,8 +238,6 @@ class User(auth.User):
         """
         
         for panel, layout in self.get_layouts(columns_count).items():
-            layout.column, layout.order = column_ordering[panel]
-            self.panels[panel].layout[columns_count] = layout
-    
-    def reset_panels(self):
-        self.panels = {panel.get_name(): Panel() for panel in self.get_all_panels()}
+            if panel in column_ordering:
+                layout.column, layout.order = column_ordering[panel]
+                self.panels[panel].layout[columns_count] = layout

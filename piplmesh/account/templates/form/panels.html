@@ -2,27 +2,22 @@
 
 {% load i18n frontend %}
 
-{% block form_field %}
-    <li class="field">
-        <div class="text">
-            <label for="{{ field.id_for_label }}">
-                {{ field.label }}
-            </label>
-            <div class="locked">
-            </div>
-            {% with panels_with_dependencies|get:field.name as panel_dependencies %}
-                <div class="dependencies">
-                    {% if panel_dependencies %}
-                        {% trans "Required panels:" %}
-                        <ul>
-                            {% for panel_dependency in panel_dependencies %}
-                                <li>{{ panel_dependency }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                </div>
-            {% endwith %}
+{% block form_after_field %}
+    <div class="text">
+        <div class="locked">
         </div>
-        <div class="input">{{ field }}</div>
-    </li>
+        {% with panels_with_dependencies|get:field.name as panel_dependencies %}
+            <div class="dependencies">
+                {% if panel_dependencies %}
+                    {% trans "Required panels:" %}
+                    <ul>
+                        {% for panel_dependency in panel_dependencies %}
+                            <li>{{ panel_dependency }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endwith %}
+    </div>
+</li>
 {% endblock %}
