@@ -4,9 +4,11 @@
 
 import os
 
+USE_TZ = True
+
 MONGO_DATABASE_NAME = 'PiplMesh'
 MONGO_DATABASE_OPTIONS = {
-    'tz_aware': True,
+    'tz_aware': USE_TZ,
 }
 
 import mongoengine
@@ -39,7 +41,6 @@ MANAGERS = ADMINS
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
 TIME_ZONE = 'Europe/Ljubljana'
-USE_TZ = True
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -186,7 +187,6 @@ INSTALLED_APPS = (
     'piplmesh.nodes',
     'piplmesh.utils',
     'piplmesh.panels',
-    'piplmesh.panels.horoscope', # To load manage.py command
 
     'django.contrib.messages',
     'django.contrib.sessions',
@@ -239,6 +239,7 @@ BROKER_URL = 'mongodb://127.0.0.1:27017/celery'
 
 CELERY_ENABLE_UTC = USE_TZ
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
 
 CELERY_IMPORTS = (
     'piplmesh.frontend.views', # To connect send_update_on_new_notification signal
