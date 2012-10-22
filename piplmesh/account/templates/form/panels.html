@@ -4,8 +4,7 @@
 
 {% block form_after_field %}
     <div class="text">
-        <div class="locked">
-        </div>
+        <div class="locked"></div>
         {% with panels_with_dependencies|get:field.name as panel_dependencies %}
             <div class="dependencies">
                 {% if panel_dependencies %}

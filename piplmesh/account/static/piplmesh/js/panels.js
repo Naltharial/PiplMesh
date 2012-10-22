@@ -1,18 +1,17 @@
 $(document).ready(function () {
     var panels_requiredby = {}
     
-    $('#content .panels form').on('submit', function (event) {
-        $('input[type="checkbox"]:disabled', this).prop('disabled', false);
-    }).find('input[type="checkbox"]').on('change', function (event) {
-        validateCheckbox(this);
+    $('#content .panels form input[type="checkbox"][data-display="True"]').on('change', function (event) {
+        var display = $(this);
+        validateCheckbox(display);
+        $('#id_' + display.data('panel')).val(Number(display.prop('checked')));
     }).andSelf().find(':checked').change();
     
     function validateCheckbox(checkbox) {
-        var checkbox = $(checkbox);
-        var panel = checkbox.attr('name');
+        var panel = checkbox.data('panel');
         var checked = checkbox.prop('checked');
         
-    	$.each(panels_with_dependencies[panel] || [], function (index, dependency) {
+        $.each(panels_with_dependencies[panel] || [], function (index, dependency) {
             if (!(dependency in panels_requiredby)) {
                 panels_requiredby[dependency] = {};
             }
@@ -29,7 +28,7 @@ $(document).ready(function () {
     }
 
     function lockCheckbox(panel) {
-        var panel_checkbox = $('#content .panels form input[name="' + panel + '"]');
+        var panel_checkbox = $('#content .panels form input[data-panel="' + panel + '"]');
         var panel_locktext = $('.locked', panel_checkbox.parents('li'));
         var changed = false;
         
@@ -37,7 +36,7 @@ $(document).ready(function () {
             panel_locktext.text(gettext("Panel is required by:"));
             var list = $('<ul/>');
             $.each(panels_requiredby[panel], function (panel, depends) {
-            	$('<li/>').text(panel).appendTo(list);
+                $('<li/>').text(panel).appendTo(list);
             })
             list.appendTo(panel_locktext);
             
@@ -55,8 +54,8 @@ $(document).ready(function () {
         
         // Only if it changed, otherwise there's a chance of an infinite loop with mutually dependent panels.
         if (changed) {
-	        // Trigger event to recursively check dependencies throughout hierarchy.
-	        panel_checkbox.change();
+            // Trigger event to recursively check dependencies throughout hierarchy.
+            panel_checkbox.change();
         }
     }
 });

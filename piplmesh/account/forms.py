@@ -171,7 +171,15 @@ class EmailConfirmationProcessTokenForm(forms.Form):
 class PanelFormMetaclass(forms.Form.__metaclass__):
     def __new__(cls, name, bases, attrs):
         for panel in panels.panels_pool.get_all_panels():
-            attrs[panel.get_name()] = forms.BooleanField(required=False)
+            data_box = panel.get_name()
+            display_box = data_box + "_display"
+            
+            attrs[data_box] = forms.IntegerField(required=False, initial=0)
+            attrs[data_box].widget = forms.HiddenInput()
+            attrs[display_box] = forms.BooleanField(label=data_box, required=False)
+            
+            # Connect display checkbox to data checkbox
+            attrs[display_box].widget = forms.CheckboxInput(attrs={'data-panel':data_box, 'data-display':'True'})
         
         return super(PanelFormMetaclass, cls).__new__(cls, name, bases, attrs)
 
@@ -189,9 +197,12 @@ class PanelForm(forms.Form):
             if not panel_enabled:
                 continue
             
-            panel = panels.panels_pool.get_panel(panel_name)
-            for dependency in panel.get_dependencies():
-                if not cleaned_data.get(dependency, False):
-                    raise exceptions.ValidationError(_("Dependencies not satisfied."))
+            try:
+                panel = panels.panels_pool.get_panel(panel_name)
+                for dependency in panel.get_dependencies():
+                    if not cleaned_data.get(dependency, False):
+                        raise exceptions.ValidationError(_("Dependencies not satisfied."))
+            except panels.exceptions.PanelNotRegistered:
+                del cleaned_data[panel_name]
         
         return cleaned_data

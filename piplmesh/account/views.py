@@ -16,7 +16,6 @@ from pushserver import signals
 import tweepy
 
 from piplmesh.account import forms, models
-from piplmesh import panels
 
 import django_browserid
 from django_browserid import views as browserid_views
@@ -415,12 +414,24 @@ class PanelView(generic_views.FormView):
         return super(PanelView, self).form_valid(form)
     
     def get_initial(self):
-        return {panel: True for panel in self.request.user.panels.keys()}
+        panels = {}
+        for panel in self.request.user.panels.keys():
+            panels[panel] = 1
+            panels[panel + '_display'] = True
+            
+        return panels
     
     def get_context_data(self, **kwargs):
         context = super(PanelView, self).get_context_data(**kwargs)
+        
+        panels_with_dependencies = {}
+        for panel in self.request.user.get_all_panels():
+            name = panel.get_name()
+            panels_with_dependencies[name] = panel.dependencies
+            panels_with_dependencies[name + '_display'] = panel.dependencies
+        
         context.update({
-            'panels_with_dependencies': {panel.get_name(): panel.dependencies for panel in panels.panels_pool.get_all_panels()}
+            'panels_with_dependencies': panels_with_dependencies
         })
         
         return context

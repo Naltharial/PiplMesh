@@ -61,10 +61,9 @@ class PanelState(mongoengine.EmbeddedDocument):
 class Panel(mongoengine.EmbeddedDocument):
     """
     This class holds panel instances for a user, their properties and layouts.
-    
-    :param dict layout: mapping of count of displayed columns (`string`) to `PanelState` objects for that count
     """
-        
+    
+    # Mapping of count of displayed columns (string) to PanelState objects, controlling display for the panel at that number of columns
     layout = mongoengine.MapField(mongoengine.EmbeddedDocumentField(PanelState))
     
     def get_layout(self, columns_count):
@@ -108,6 +107,7 @@ class User(auth.User):
     email_confirmed = mongoengine.BooleanField(default=False)
     email_confirmation_token = mongoengine.EmbeddedDocumentField(EmailConfirmationToken)
     
+    # Mapping of panel names (string) to Panel objects which store display data
     panels = mongoengine.MapField(mongoengine.EmbeddedDocumentField(Panel), default=lambda: {panel.get_name(): Panel() for panel in piplmesh_panels.panels_pool.get_all_panels()})
     
     @models.permalink
@@ -205,6 +205,9 @@ class User(auth.User):
     
     def get_panels(self):
         return map(piplmesh_panels.panels_pool.get_panel, self.panels.keys())
+    
+    def get_all_panels(self):
+        return piplmesh_panels.panels_pool.get_all_panels()
     
     def get_collapsed(self, columns_count):
         return {panel: layout.collapsed for panel, layout in self.get_layouts(columns_count).items()}
