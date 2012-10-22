@@ -414,12 +414,7 @@ class PanelView(generic_views.FormView):
         return super(PanelView, self).form_valid(form)
     
     def get_initial(self):
-        panels = {}
-        for panel in self.request.user.panels.keys():
-            panels[panel] = 1
-            panels[panel + '_display'] = True
-            
-        return panels
+        return {panel + '_display': True for panel in self.request.user.panels.keys()}
     
     def get_context_data(self, **kwargs):
         context = super(PanelView, self).get_context_data(**kwargs)

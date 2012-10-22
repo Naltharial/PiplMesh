@@ -178,7 +178,7 @@ class PanelFormMetaclass(forms.Form.__metaclass__):
             attrs[data_box].widget = forms.HiddenInput()
             attrs[display_box] = forms.BooleanField(label=data_box, required=False)
             
-            # Connect display checkbox to data checkbox
+            # Connect display checkbox to data field
             attrs[display_box].widget = forms.CheckboxInput(attrs={'data-panel':data_box, 'data-display':'True'})
         
         return super(PanelFormMetaclass, cls).__new__(cls, name, bases, attrs)
