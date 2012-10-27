@@ -5,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from piplmesh import panels
 from piplmesh.account import fields, form_fields, models
-import pdb
+
 class UserUsernameForm(forms.Form):
     """
     Class with username form.
@@ -191,7 +191,7 @@ class PanelForm(forms.Form):
     
     def clean(self):
         cleaned_data = super(PanelForm, self).clean()
-        pdb.set_trace()
+        
         for panel_name, panel_enabled in cleaned_data.items():
             try:
                 panel = panels.panels_pool.get_panel(panel_name)
@@ -205,5 +205,5 @@ class PanelForm(forms.Form):
                 del cleaned_data[panel_name]
             except panels.exceptions.PanelNotRegistered:
                 del cleaned_data[panel_name]
-        pdb.set_trace()
+        
         return cleaned_data

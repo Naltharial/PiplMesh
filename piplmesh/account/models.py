@@ -1,4 +1,4 @@
-import datetime, hashlib, urllib, uuid, pdb
+import datetime, hashlib, urllib, uuid
 
 from django.conf import settings
 from django.contrib.auth import hashers, models as auth_models
@@ -229,7 +229,6 @@ class User(auth.User):
         return name in self.panels
     
     def set_panels(self, panels):
-        pdb.set_trace()
         # Preserve prior settings for kept panels
         self.panels = {name: self.panels.get(name, Panel()) for name in panels}
     
