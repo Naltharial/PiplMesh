@@ -5,7 +5,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from piplmesh import panels
 from piplmesh.account import fields, form_fields, models
-
+import pdb
 class UserUsernameForm(forms.Form):
     """
     Class with username form.
@@ -174,8 +174,7 @@ class PanelFormMetaclass(forms.Form.__metaclass__):
             data_box = panel.get_name()
             display_box = data_box + "_display"
             
-            attrs[data_box] = forms.IntegerField(required=False, initial=0)
-            attrs[data_box].widget = forms.HiddenInput()
+            attrs[data_box] = forms.BooleanField(initial=False, widget=forms.HiddenInput(), required=False)
             attrs[display_box] = forms.BooleanField(label=data_box, required=False)
             
             # Connect display checkbox to data field
@@ -192,17 +191,19 @@ class PanelForm(forms.Form):
     
     def clean(self):
         cleaned_data = super(PanelForm, self).clean()
-        
+        pdb.set_trace()
         for panel_name, panel_enabled in cleaned_data.items():
-            if not panel_enabled:
-                continue
-            
             try:
                 panel = panels.panels_pool.get_panel(panel_name)
+                if not panel_enabled:
+                    continue
+                
                 for dependency in panel.get_dependencies():
                     if not cleaned_data.get(dependency, False):
                         raise exceptions.ValidationError(_("Dependencies not satisfied."))
+            except KeyError:
+                del cleaned_data[panel_name]
             except panels.exceptions.PanelNotRegistered:
                 del cleaned_data[panel_name]
-        
+        pdb.set_trace()
         return cleaned_data

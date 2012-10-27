@@ -4,7 +4,7 @@ $(document).ready(function () {
     $('#content .panels form input[type="checkbox"][data-display="True"]').on('change', function (event) {
         var display = $(this);
         validateCheckbox(display);
-        $('#id_' + display.data('panel')).val(Number(display.prop('checked')));
+        $('#id_' + display.data('panel')).val(display.prop('checked'));
     }).andSelf().find(':checked').change();
     
     function validateCheckbox(checkbox) {
