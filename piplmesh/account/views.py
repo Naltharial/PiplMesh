@@ -1,4 +1,4 @@
-import json, urllib, urlparse, pdb
+import json, urllib, urlparse
 
 from django import dispatch, http, shortcuts
 from django.conf import settings
@@ -408,7 +408,6 @@ class PanelView(generic_views.FormView):
     success_url = urlresolvers.reverse_lazy('user_panels')
 
     def form_valid(self, form):
-        pdb.set_trace()
         user = self.request.user
         user.set_panels([panel for panel, enabled in form.cleaned_data.items() if enabled])
         user.save()

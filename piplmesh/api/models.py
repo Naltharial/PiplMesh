@@ -20,7 +20,7 @@ class Comment(base.AuthoredEmbeddedDocument):
     message = mongoengine.StringField(max_length=COMMENT_MESSAGE_MAX_LENGTH, required=True)
 
     # So that we can access both pk and id
-    pk = fields.link_property('id')
+    #pk = fields.link_property('id')
 
 class Attachment(base.AuthoredEmbeddedDocument):
     """
